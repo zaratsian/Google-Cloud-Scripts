@@ -1,0 +1,112 @@
+
+
+###########################################################################################################
+#
+#   Google Cloud Dataflow
+#   GCP PubSub >> Dataflow (Transformations) >> BigQuery
+#
+#   Usage: python 
+'''
+python gcp_dataflow.py \
+    --input_topic projects/dzproject20180301/topics/chicagotraffic \
+    --output_table zdataflow1 \
+    --project dzproject20180301 \
+    --runner DataflowRunner
+'''
+#   pip install google-cloud-dataflow
+#
+###########################################################################################################
+
+
+from __future__ import absolute_import
+import logging
+import argparse
+import apache_beam as beam
+import apache_beam.transforms.window as window
+from apache_beam.options.pipeline_options import PipelineOptions
+from apache_beam.options.pipeline_options import StandardOptions
+from apache_beam.options.pipeline_options import SetupOptions
+from apache_beam.io import ReadFromText
+from apache_beam.io import WriteToText
+#from apache_beam.io.gcp.bigquery import WriteToBigQuery
+
+
+
+def parse_pubsub(line):
+    import json
+    record = json.loads(line)
+    record = json.loads(json.dumps({"direction":record['_direction'], "street":record['street']}))
+    #return (record['mac']), (record['status']), (record['datetime'])
+    return record
+
+
+def run(argv=None):
+    """Build and run the pipeline."""
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--input_topic', required=True,
+        help='Input PubSub topic of the form "projects/<project>/topics/<topic>".')
+    parser.add_argument(
+        '--output_table', required=False,
+        help='Output BigQuery table for results specified as: PROJECT:DATASET.TABLE or DATASET.TABLE.')
+    
+    known_args, pipeline_args = parser.parse_known_args(argv)
+    
+    pipeline_args.extend([
+          # CHANGE 2/5: (OPTIONAL) Change this to DataflowRunner to
+          # run your pipeline on the Google Cloud Dataflow Service.
+          '--runner=DirectRunner',
+          # CHANGE 3/5: Your project ID is required in order to run your pipeline on
+          # the Google Cloud Dataflow Service.
+          '--project=dzproject20180301',
+          # CHANGE 4/5: Your Google Cloud Storage path is required for staging local
+          # files.
+          #'--staging_location=gs://YOUR_BUCKET_NAME/AND_STAGING_DIRECTORY',
+          # CHANGE 5/5: Your Google Cloud Storage path is required for temporary
+          # files.
+          #'--temp_location=gs://YOUR_BUCKET_NAME/AND_TEMP_DIRECTORY',
+          '--job_name=your-wordcount-job',
+      ])
+    
+    pipeline_options = PipelineOptions(pipeline_args)
+    pipeline_options.view_as(SetupOptions).save_main_session = True
+    
+    with beam.Pipeline(options=pipeline_options) as p:
+        # Read the pubsub topic into a PCollection.
+        lines = ( p | beam.io.ReadStringsFromPubSub(known_args.input_topic)
+                    | beam.Map(parse_pubsub)
+                    | 'Write' >> beam.io.WriteToBigQuery(
+                        table='zdataflow2',
+                        dataset='fitness_data',
+                        #project='',
+                        schema='direction:STRING,street:STRING',
+                        create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
+                        write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND,
+                        batch_size=10)
+              )
+
+
+if __name__ == '__main__':
+    logging.getLogger().setLevel(logging.INFO)
+    run()
+
+
+'''
+https://cloud.google.com/dataflow/docs/quickstarts
+
+https://beam.apache.org/documentation/sdks/pydoc/2.4.0/
+https://beam.apache.org/documentation/sdks/pydoc/2.4.0/apache_beam.io.gcp.bigquery.html#apache_beam.io.gcp.bigquery.WriteToBigQuery
+
+https://github.com/apache/beam/tree/master/sdks/python/apache_beam/examples
+'''
+
+
+'''
+NOTE: BigQuery expects JSON newline seperated data, such as
+{"name":"dan","age"34}
+{"name":"frank","age"54}
+{"name":"dean","age"64}
+'''
+
+#ZEND
