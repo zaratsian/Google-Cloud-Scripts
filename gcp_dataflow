@@ -9,17 +9,23 @@
 python gcp_dataflow.py \
     --runner DirectRunner \
     --job_name 'dzdataflowjob1' \
-    --batch_size 10 \
+    --batch_size 100 \
     --project_id dzproject20180301 \
     --input_topic projects/dzproject20180301/topics/chicagotraffic \
     --dataset_name chicago_traffic \
     --table_name traffic_segments1 \
-    --table_schema '_direction:STRING,_fromst:STRING,_last_updt:STRING,_length:FLOAT,_lif_lat:FLOAT,_lit_lat:FLOAT,_lit_lon:FLOAT,_strheading:STRING,_tost:STRING,_traffic:STRING,segmentid:STRING,start_lon:FLOAT,street:STRING'
+    --table_schema 'segmentid:STRING,street:STRING,direction:STRING,from_street:STRING,to_street:STRING,length:FLOAT,street_heading:STRING,start_long:FLOAT,start_lat:FLOAT,end_long:FLOAT,end_lat:FLOAT,speed:FLOAT,last_updated:STRING,comments:STRING'
+
+--table_schema '_direction:STRING,_fromst:STRING,_last_updt:STRING,_length:FLOAT,_lif_lat:FLOAT,_lit_lat:FLOAT,_lit_lon:FLOAT,_strheading:STRING,_tost:STRING,_traffic:STRING,segmentid:STRING,start_lon:FLOAT,street:STRING'
+--table_schema 'segmentid:STRING,street:STRING,direction:STRING,from_street:STRING,to_street:STRING,length:FLOAT,street_heading:STRING,start_long:FLOAT,start_lat:FLOAT,end_long:FLOAT,end_lat:FLOAT,speed:FLOAT,last_updated:STRING,comments:STRING'
 '''
+#   Used for testing:
+#   gcp_pubsub_publish_message(project_name, topic_name, json.dumps({"_direction":"NE","street":"108 main st"}).encode('utf-8'))
+#
+#
 #   pip install google-cloud-dataflow
 #
 ################################################################################################################
-
 
 from __future__ import absolute_import
 import logging
@@ -53,7 +59,7 @@ def run(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--runner',       required=False, default='DirectRunner',       help='Dataflow Runner - DataflowRunner or DirectRunner (local)')
     parser.add_argument('--job_name',     required=False, default='dzdataflowjob1',     help='Dataflow Job Name')
-    parser.add_argument('--batch_size',   required=False, default='10',                 help='Dataflow Batch Size')
+    parser.add_argument('--batch_size',   required=False, default='100',                help='Dataflow Batch Size')
     parser.add_argument('--project_id',   required=False, default='dzproject20180301',  help='GCP Project ID')
     parser.add_argument('--input_topic',  required=False, default='',                   help='Input PubSub Topic: projects/<project_id>/topics/<topic_name>')
     parser.add_argument('--dataset_name', required=False, default='chicago_traffic',    help='Output BigQuery Dataset') 
@@ -82,8 +88,67 @@ def run(argv=None):
       ])
     
     pipeline_options = PipelineOptions(pipeline_args)
-    #pipeline_options.view_as(SetupOptions).save_main_session = True
+    pipeline_options.view_as(SetupOptions).save_main_session = True
     pipeline_options.view_as(StandardOptions).streaming = True
+    
+    ###################################################################
+    #   BigQuery Table Schema
+    #   https://github.com/apache/beam/blob/474345f5987e47a22d063c7bfcb3638c85a57e64/sdks/python/apache_beam/examples/cookbook/bigquery_schema.py#L49
+    ###################################################################
+    
+    '''
+    table_schema = bigquery.TableSchema()
+    
+    # Fields that use standard types.
+    direction_schema = bigquery.TableFieldSchema()
+    direction_schema.name = '_direction'
+    direction_schema.type = 'string'
+    direction_schema.mode = 'nullable'
+    table_schema.fields.append(direction_schema)
+    
+    fromst_schema = bigquery.TableFieldSchema()
+    fromst_schema.name = '_fromst'
+    fromst_schema.type = 'string'
+    fromst_schema.mode = 'required'
+    table_schema.fields.append(fromst_schema)
+    
+    last_updt_schema = bigquery.TableFieldSchema()
+    last_updt_schema.name = '_last_updt'
+    last_updt_schema.type = 'integer'
+    last_updt_schema.mode = 'nullable'
+    table_schema.fields.append(last_updt_schema)
+    
+    length_schema = bigquery.TableFieldSchema()
+    length_schema.name = '_length'
+    length_schema.type = 'string'
+    length_schema.mode = 'nullable'
+    table_schema.fields.append(length_schema)
+    '''
+    
+    # Nested Example
+    '''
+    phone_number_schema = bigquery.TableFieldSchema()
+    phone_number_schema.name = 'phoneNumber'
+    phone_number_schema.type = 'record'
+    phone_number_schema.mode = 'nullable'
+    
+    area_code = bigquery.TableFieldSchema()
+    area_code.name = 'areaCode'
+    area_code.type = 'integer'
+    area_code.mode = 'nullable'
+    phone_number_schema.fields.append(area_code)
+    
+    number = bigquery.TableFieldSchema()
+    number.name = 'number'
+    number.type = 'integer'
+    number.mode = 'nullable'
+    phone_number_schema.fields.append(number)
+    table_schema.fields.append(phone_number_schema)
+    '''
+    
+    ###################################################################
+    #   DataFlow Pipeline
+    ###################################################################
     
     with beam.Pipeline(options=pipeline_options) as p:
         
@@ -102,7 +167,8 @@ def run(argv=None):
                         schema=known_args.table_schema,
                         create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
                         write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND,
-                        batch_size=int(known_args.batch_size))
+                        batch_size=int(100)
+                        )
 
 
 ################################################################################################################
@@ -131,24 +197,12 @@ https://beam.apache.org/documentation/sdks/pydoc/2.4.0/apache_beam.io.gcp.bigque
 https://github.com/apache/beam/tree/master/sdks/python/apache_beam/examples
 '''
 
-
 '''
 NOTE: BigQuery expects JSON newline seperated data, such as
 {"name":"dan","age"34}
 {"name":"frank","age"54}
 {"name":"dean","age"64}
 
-NOTE: Table Schema (for BigQuery)
-  'var01:STRING',
-  'var02:BYTES',
-  'var03:INTEGER',
-  'var04:FLOAT',
-  'var05:BOOLEAN',
-  'var06:DATE',
-  'var07:TIME',
-  'var08:TIMESTAMP',
-  'var09:DATETIME',
-  'var10:RECORD',
 '''
 
 #ZEND
