@@ -14,7 +14,7 @@ python gcp_dataflow.py \
     --input_topic projects/dzproject20180301/topics/chicagotraffic \
     --dataset_name chicago_traffic \
     --table_name traffic_segments1 \
-    --table_schema 'direction:STRING,state:STRING'
+    --table_schema '_direction:STRING,_fromst:STRING,_last_updt:STRING,_length:FLOAT,_lif_lat:FLOAT,_lit_lat:FLOAT,_lit_lon:FLOAT,_strheading:STRING,_tost:STRING,_traffic:STRING,segmentid:STRING,start_lon:FLOAT,street:STRING'
 '''
 #   pip install google-cloud-dataflow
 #
@@ -42,7 +42,7 @@ from apache_beam.io import WriteToText
 def parse_pubsub(line):
     import json
     record = json.loads(line)
-    record = json.loads(json.dumps({"direction":record['_direction'], "street":record['street']}))
+    #record = json.loads(json.dumps({"direction":record['_direction'], "street":record['street']}))    #'direction:STRING,state:STRING'
     #return (record['mac']), (record['status']), (record['datetime'])
     return record
 
@@ -65,17 +65,20 @@ def run(argv=None):
     pipeline_args.extend([
           # CHANGE 2/5: (OPTIONAL) Change this to DataflowRunner to
           # run your pipeline on the Google Cloud Dataflow Service. DirectRunner (local)
-          '--runner=DirectRunner',
+          #'--runner=DirectRunner',
+          '--runner=' + str(known_args.runner),
           # CHANGE 3/5: Your project ID is required in order to run your pipeline on
           # the Google Cloud Dataflow Service.
-          '--project=dzproject20180301',
+          #'--project=dzproject20180301',
+          '--project=' + str(known_args.project_id),
           # CHANGE 4/5: Your Google Cloud Storage path is required for staging local
           # files.
           '--staging_location=gs://tmp_dataflow/staging',
           # CHANGE 5/5: Your Google Cloud Storage path is required for temporary
           # files.
           '--temp_location=gs://tmp_dataflow/tmp',
-          '--job_name=dzdataflowjob1',
+          #'--job_name=dzdataflowjob1',
+          '--job_name=' + str(known_args.job_name),
       ])
     
     pipeline_options = PipelineOptions(pipeline_args)
@@ -99,8 +102,7 @@ def run(argv=None):
                         schema=known_args.table_schema,
                         create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
                         write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND,
-                        batch_size=10)
-
+                        batch_size=int(known_args.batch_size))
 
 
 ################################################################################################################
