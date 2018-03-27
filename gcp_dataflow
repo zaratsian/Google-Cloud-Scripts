@@ -1,21 +1,24 @@
 
 
-###########################################################################################################
+################################################################################################################
 #
 #   Google Cloud Dataflow
-#   GCP PubSub >> Dataflow (Transformations) >> BigQuery
 #
-#   Usage: python 
+#   Usage: 
 '''
 python gcp_dataflow.py \
+    --runner DirectRunner \
+    --job_name 'dzdataflowjob1' \
+    --batch_size 10 \
+    --project_id dzproject20180301 \
     --input_topic projects/dzproject20180301/topics/chicagotraffic \
-    --output_table zdataflow1 \
-    --project dzproject20180301 \
-    --runner DataflowRunner
+    --dataset_name chicago_traffic \
+    --table_name traffic_segments1 \
+    --table_schema 'direction:STRING,state:STRING'
 '''
 #   pip install google-cloud-dataflow
 #
-###########################################################################################################
+################################################################################################################
 
 
 from __future__ import absolute_import
@@ -28,9 +31,13 @@ from apache_beam.options.pipeline_options import StandardOptions
 from apache_beam.options.pipeline_options import SetupOptions
 from apache_beam.io import ReadFromText
 from apache_beam.io import WriteToText
-#from apache_beam.io.gcp.bigquery import WriteToBigQuery
 
 
+################################################################################################################
+#
+#   Functions
+#
+################################################################################################################
 
 def parse_pubsub(line):
     import json
@@ -44,53 +51,74 @@ def run(argv=None):
     """Build and run the pipeline."""
     
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '--input_topic', required=True,
-        help='Input PubSub topic of the form "projects/<project>/topics/<topic>".')
-    parser.add_argument(
-        '--output_table', required=False,
-        help='Output BigQuery table for results specified as: PROJECT:DATASET.TABLE or DATASET.TABLE.')
+    parser.add_argument('--runner',       required=False, default='DirectRunner',       help='Dataflow Runner - DataflowRunner or DirectRunner (local)')
+    parser.add_argument('--job_name',     required=False, default='dzdataflowjob1',     help='Dataflow Job Name')
+    parser.add_argument('--batch_size',   required=False, default='10',                 help='Dataflow Batch Size')
+    parser.add_argument('--project_id',   required=False, default='dzproject20180301',  help='GCP Project ID')
+    parser.add_argument('--input_topic',  required=False, default='',                   help='Input PubSub Topic: projects/<project_id>/topics/<topic_name>')
+    parser.add_argument('--dataset_name', required=False, default='chicago_traffic',    help='Output BigQuery Dataset') 
+    parser.add_argument('--table_name',   required=False, default='',                   help='Output BigQuery Table')
+    parser.add_argument('--table_schema', required=False, default='',                   help='Output BigQuery Schema')
     
     known_args, pipeline_args = parser.parse_known_args(argv)
     
     pipeline_args.extend([
           # CHANGE 2/5: (OPTIONAL) Change this to DataflowRunner to
-          # run your pipeline on the Google Cloud Dataflow Service.
+          # run your pipeline on the Google Cloud Dataflow Service. DirectRunner (local)
           '--runner=DirectRunner',
           # CHANGE 3/5: Your project ID is required in order to run your pipeline on
           # the Google Cloud Dataflow Service.
           '--project=dzproject20180301',
           # CHANGE 4/5: Your Google Cloud Storage path is required for staging local
           # files.
-          #'--staging_location=gs://YOUR_BUCKET_NAME/AND_STAGING_DIRECTORY',
+          '--staging_location=gs://tmp_dataflow/staging',
           # CHANGE 5/5: Your Google Cloud Storage path is required for temporary
           # files.
-          #'--temp_location=gs://YOUR_BUCKET_NAME/AND_TEMP_DIRECTORY',
-          '--job_name=your-wordcount-job',
+          '--temp_location=gs://tmp_dataflow/tmp',
+          '--job_name=dzdataflowjob1',
       ])
     
     pipeline_options = PipelineOptions(pipeline_args)
-    pipeline_options.view_as(SetupOptions).save_main_session = True
+    #pipeline_options.view_as(SetupOptions).save_main_session = True
+    pipeline_options.view_as(StandardOptions).streaming = True
     
     with beam.Pipeline(options=pipeline_options) as p:
+        
         # Read the pubsub topic into a PCollection.
-        lines = ( p | beam.io.ReadStringsFromPubSub(known_args.input_topic)
-                    | beam.Map(parse_pubsub)
-                    | 'Write' >> beam.io.WriteToBigQuery(
-                        table='zdataflow2',
-                        dataset='fitness_data',
-                        #project='',
-                        schema='direction:STRING,street:STRING',
+        events = ( p | beam.io.ReadStringsFromPubSub(known_args.input_topic) )
+        
+        # Tranform events
+        transformed = (events 
+                    | beam.Map(parse_pubsub))
+        
+        # Persist to BigQuery
+        transformed | 'Write' >> beam.io.WriteToBigQuery(
+                        table=known_args.table_name,
+                        dataset=known_args.dataset_name,
+                        project=known_args.project_id,
+                        schema=known_args.table_schema,
                         create_disposition=beam.io.BigQueryDisposition.CREATE_IF_NEEDED,
                         write_disposition=beam.io.BigQueryDisposition.WRITE_APPEND,
                         batch_size=10)
-              )
 
+
+
+################################################################################################################
+#
+#   Main
+#
+################################################################################################################
 
 if __name__ == '__main__':
     logging.getLogger().setLevel(logging.INFO)
     run()
 
+
+################################################################################################################
+#
+#   References
+#
+################################################################################################################
 
 '''
 https://cloud.google.com/dataflow/docs/quickstarts
@@ -107,6 +135,18 @@ NOTE: BigQuery expects JSON newline seperated data, such as
 {"name":"dan","age"34}
 {"name":"frank","age"54}
 {"name":"dean","age"64}
+
+NOTE: Table Schema (for BigQuery)
+  'var01:STRING',
+  'var02:BYTES',
+  'var03:INTEGER',
+  'var04:FLOAT',
+  'var05:BOOLEAN',
+  'var06:DATE',
+  'var07:TIME',
+  'var08:TIMESTAMP',
+  'var09:DATETIME',
+  'var10:RECORD',
 '''
 
 #ZEND
