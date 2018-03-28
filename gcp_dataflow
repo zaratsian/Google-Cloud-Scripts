@@ -7,7 +7,7 @@
 #   Usage: 
 '''
 python gcp_dataflow.py \
-    --runner DirectRunner \
+    --runner DirectRunner \   
     --job_name 'dzdataflowjob1' \
     --batch_size 100 \
     --project_id dzproject20180301 \
@@ -158,6 +158,12 @@ def run(argv=None):
         # Tranform events
         transformed = (events 
                     | beam.Map(parse_pubsub))
+        
+        # Windowing
+        #transformed | 'PairWithOne' >> beam.Map(lambda x: (x[0], 1))
+        #            | 'Test' >> beam.WindowInto(window.FixedWindows(size=60, 0))
+        #            | 'Group' >> beam.GroupByKey()
+        #            | 'write' >> WriteToText('gs://zgym_fitness_data')
         
         # Persist to BigQuery
         transformed | 'Write' >> beam.io.WriteToBigQuery(
