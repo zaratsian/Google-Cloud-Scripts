@@ -12,6 +12,8 @@
 import os,sys,re
 import json
 import time,datetime
+#from gcloud import resource_manager
+from google.cloud import resource_manager
 from google.cloud import storage
 from google.cloud import pubsub
 from google.cloud import bigquery
@@ -21,7 +23,7 @@ from google.cloud.bigquery.job import WriteDisposition
 
 ###############################################################################################################
 #
-#   Functions
+#   General Functions
 #
 ###############################################################################################################
 
@@ -29,9 +31,13 @@ from google.cloud.bigquery.job import WriteDisposition
 def check_for_google_creds():
     import os
     try:
-        return '[ INFO ] Credential found at ' + str([v for k,v in os.environ.items() if k == 'GOOGLE_APPLICATION_CREDENTIALS'][0])
+        print('Credential found at ' + str([v for k,v in os.environ.items() if k == 'GOOGLE_APPLICATION_CREDENTIALS'][0]))
     except:
-        return '[ WARN ] No credentials found. Make sure GOOGLE_APPLICATION_CREDENTIALS env variable points to .json authorization file.'
+        print('No credentials found. Make sure GOOGLE_APPLICATION_CREDENTIALS env variable points to .json authorization file.')
+        print('Set the env variable, i.e.: Run gcloud auth login, then export GOOGLE_APPLICATION_CREDENTIALS=~/key.json')
+        sys.exit()
+
+check_for_google_creds()
 
 
 ###############################################################################################################
@@ -211,15 +217,26 @@ rows[0].get('freq')
 
 '''
 
-Setup:
-pip install --upgrade google-cloud-bigquery
-gcloud auth login
-gcloud components update
-export GOOGLE_APPLICATION_CREDENTIALS=~/key.json
-
 General References:
 https://github.com/GoogleCloudPlatform/google-cloud-python
-https://google-cloud-python.readthedocs.io/en/latest/core/auth.html
+https://github.com/GoogleCloudPlatform/python-docs-samples
+https://cloud.google.com/python/docs/
+
+Setup:
+pip install gcloud
+pip install --upgrade google-cloud
+pip install --upgrade google-cloud-bigquery
+pip install --upgrade google-cloud-resource-manager
+
+Authentication:
+https://cloud.google.com/docs/authentication/getting-started
+https://stackoverflow.com/questions/42379685/can-i-automate-google-cloud-sdk-gcloud-init-interactive-command
+gcloud auth login                                                   # Login to GCP from CLI / SDK
+gcloud config set project <project_id>                              # Specify GCP project
+gcloud iam service-accounts create <service_account_name>           # Create service account
+gcloud projects add-iam-policy-binding <project_id> --member "serviceAccount:<service_account_name>@<project_id>.iam.gserviceaccount.com" --role "roles/owner"    # Grant permissions  
+gcloud iam service-accounts keys create ~/gcpkey.json --iam-account "<service_account_name>@<project_id>.iam.gserviceaccount.com"          # Generate key file
+export GOOGLE_APPLICATION_CREDENTIALS=~/gcpkey.json           
 
 App Engine Flask App:
 https://codelabs.developers.google.com/codelabs/cloud-vision-app-engine/index.html
