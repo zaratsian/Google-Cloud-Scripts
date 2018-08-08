@@ -3,12 +3,11 @@
 #
 #   GCP - Natural Language API
 #
+#   References:
 #   https://cloud.google.com/natural-language/
 #   https://cloud.google.com/natural-language/quotas
-#
 #   https://google-cloud-python.readthedocs.io/en/latest/language/usage.html
 #   https://github.com/GoogleCloudPlatform/google-cloud-python
-#
 #   https://cloud.google.com/sdk/docs/
 #   https://cloud.google.com/storage/docs/gsutil
 #
