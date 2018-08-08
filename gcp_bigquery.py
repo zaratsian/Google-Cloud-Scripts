@@ -3,10 +3,10 @@
 #
 #   GCP - BigQuery
 #
+#   References:
 #   https://cloud.google.com/bigquery/docs/
 #   https://github.com/GoogleCloudPlatform/google-cloud-python
 #   https://google-cloud-python.readthedocs.io/en/latest/bigquery/usage.html
-#
 #   https://cloud.google.com/sdk/docs/
 #   https://cloud.google.com/storage/docs/gsutil
 #
