@@ -6,6 +6,11 @@
 #
 #   This script contains misc functions and scripts useful for interacting with GCP Services
 #
+#   References:
+#   https://github.com/GoogleCloudPlatform/google-cloud-python
+#   https://github.com/GoogleCloudPlatform/python-docs-samples
+#   https://cloud.google.com/python/docs/
+#
 ###############################################################################################################
 
 
