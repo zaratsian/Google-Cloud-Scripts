@@ -4,6 +4,9 @@
 #
 #   GCP PubSub Subscriber
 #
+#   References:
+#   https://cloud.google.com/pubsub/docs/
+#
 #   Usage:  pubsub_subscriber.py <project_id> <topic_name> <subscriber_name>
 #
 ###################################################################################################
