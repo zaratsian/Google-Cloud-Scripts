@@ -1,6 +1,4 @@
 
-
-
 ###################################################################################################
 #
 #   Cloud Compute Engine (GCE)
@@ -54,5 +52,49 @@ gcloud sql databases list --instance=z-mysql-1
 gcloud sql instances delete z-mysql-1
 
 
+
+
+
+'''
+
+
+use zdatabase;
+
+
+CREATE TABLE banking (
+  transaction_id INT NOT NULL,
+  customer_id INT NOT NULL,
+  name VARCHAR(50) NOT NULL,
+  state CHAR(2),
+  transaction FLOAT,
+  calls INT,
+  at_risk INT,
+  PRIMARY KEY (transaction_id)
+);
+
+
+INSERT INTO banking 
+    (transaction_id, customer_id, name, state, transaction, calls, at_risk) 
+VALUES 
+    (100001, 1001, "Danny", "NC", 100.00, 0, 0),
+    (100002, 1002, "Rusty", "NV", 200.00, 1, 1),
+    (100003, 1003, "Linus", "IL", 300.00, 2, 0),
+    (100004, 1004, "Terry", "NV", 400.00, 3, 1),
+    (100005, 1005, "Tess",  "NV", 500.00, 4, 0),
+    (100006, 1001, "Danny", "NC", 200.00, 0, 0),
+    (100007, 1001, "Danny", "NC", 300.00, 0, 0),
+    (100008, 1002, "Rusty", "NV", 400.00, 3, 1)    
+    ;
+
+
+select * from banking;
+
+
+select customer_id, count(*) as number_of_transactions, avg(transaction) as avg_transaction 
+from banking 
+group by customer_id;
+
+
+'''
 
 #ZEND
