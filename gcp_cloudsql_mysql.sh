@@ -1,7 +1,7 @@
 
 ###################################################################################################
 #
-#   Cloud Compute Engine (GCE)
+#   Cloud SQL (MySQL)
 #
 #   Google Cloud Platform (GCP)
 #
@@ -13,10 +13,8 @@
 ###################################################################################################
 
 
-
 # Lists Cloud SQL instances
 gcloud sql instances list
-
 
 
 # Create Cloud SQL (MySQL) Instance
@@ -27,25 +25,20 @@ gcloud sql instances create z-mysql-1 \
     --region=us-east1
 
 
-
 # Set the password for the "root@%" MySQL user:
 gcloud sql users set-password root % --instance z-mysql-1 --password mysql_123
-
 
 
 # Connect to Cloud SQL (MySQL) Instance
 gcloud sql connect z-mysql-1 --user=root
 
 
-
 # Create MySQL Database
 gcloud sql databases create zdatabase --instance=z-mysql-1
 
 
-
 # List MySQL Databases
 gcloud sql databases list --instance=z-mysql-1
-
 
 
 # Delete Cloud SQL Instance
@@ -53,9 +46,8 @@ gcloud sql instances delete z-mysql-1
 
 
 
-
-
 '''
+create database zdatabase;
 
 
 use zdatabase;
@@ -94,7 +86,7 @@ select customer_id, count(*) as number_of_transactions, avg(transaction) as avg_
 from banking 
 group by customer_id;
 
-
 '''
+
 
 #ZEND
