@@ -4,8 +4,8 @@
 #
 #   Google Cloud Video Intelligence
 #
-#   Usage:
-#       file.py <youtube_url> <gcs_bucket_name>
+#   Usage: file.py --youtube_url YOUTUBE_URL --bucket_name BUCKET_NAME
+#          file.py --youtube_url=https://www.youtube.com/watch?v=imm6OR605UI --bucket_name=zmiscbucket1
 #
 #   Dependencies:
 #       pip install --upgrade google-cloud-videointelligence
@@ -18,6 +18,7 @@
 #       The Video Intelligence API supports common video formats, including .MOV, .MPEG4, .MP4, and .AVI
 #
 #############################################################################
+
 
 
 from google.cloud import videointelligence
@@ -62,6 +63,7 @@ def upload_to_gcs(bucket_name, local_filepath):
 
 
 def process_video_in_gcs(gcs_filepath):
+    print('[ INFO ] Processing video at {}'.format(gcs_filepath))
     
     video_client = videointelligence.VideoIntelligenceServiceClient()
     features     = [videointelligence.enums.Feature.LABEL_DETECTION]
@@ -74,9 +76,9 @@ def process_video_in_gcs(gcs_filepath):
     shot_metadata = {}
     for shot in shots:
         entity   = shot.entity.description
-        category = shot.category_entities[0].description
+        #category = shot.category_entities[0].description
         segments = shot.segments
-        shot_metadata[entity] = { "category":category, "count": len(list(segments)), "shot_segments":list(segments) }
+        shot_metadata[entity] = { "count": len(list(segments)), "shot_segments":list(segments) }
     
     all_labels_identified = list(shot_metadata)
     
@@ -86,9 +88,11 @@ def process_video_in_gcs(gcs_filepath):
 
 if __name__ == "__main__":
     
-    # Arguments - Only used for testing 
-    #youtube_url = 'https://www.youtube.com/watch?v=imm6OR605UI'
-    #bucket_name = 'zmiscbucket1'
+    # Arguments - Only used for testing
+    #args =  {
+    #            "youtube_url": "https://www.youtube.com/watch?v=imm6OR605UI",
+    #            "bucket_name": "zmiscbucket1"
+    #        }
     
     # Arguments
     ap = argparse.ArgumentParser()
@@ -97,10 +101,10 @@ if __name__ == "__main__":
     args = vars(ap.parse_args())
     
     # Download Youtube video as .mp4 file to local
-    local_filepath = save_youtube_video(youtube_url)
+    local_filepath = save_youtube_video(args["youtube_url"])
     
     # Upload .mp4 file to Google Cloud Storage (GCS)
-    gcs_filepath = upload_to_gcs(bucket_name, local_filepath)
+    gcs_filepath = upload_to_gcs(args["bucket_name"], local_filepath)
     
     # Process .mp4 video file, stored on Google Cloud Storage (GCS)
     process_video_in_gcs(gcs_filepath)
