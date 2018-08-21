@@ -88,7 +88,7 @@ def process_video_in_gcs(gcs_filepath):
     for k,v in shot_metadata.items():
         print((k, v['count']))
     
-    return all_labels_identified
+    return shot_metadata
 
 
 
