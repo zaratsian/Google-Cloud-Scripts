@@ -4,6 +4,8 @@
 #
 #   Google Cloud Video Intelligence
 #
+#   Video Metadata Tagging
+#
 #   Usage: file.py --youtube_url YOUTUBE_URL --bucket_name BUCKET_NAME
 #          file.py --youtube_url=https://www.youtube.com/watch?v=imm6OR605UI --bucket_name=zmiscbucket1
 #
@@ -25,6 +27,7 @@ from google.cloud import videointelligence
 from google.cloud import storage
 from pytube import YouTube
 import argparse
+import time
 
 
 
@@ -80,7 +83,10 @@ def process_video_in_gcs(gcs_filepath):
         segments = shot.segments
         shot_metadata[entity] = { "count": len(list(segments)), "shot_segments":list(segments) }
     
-    all_labels_identified = list(shot_metadata)
+    print('[ INFO ] Printing all identified entities and how many times they were seen in the video...')
+    time.sleep(3)
+    for k,v in shot_metadata.items():
+        print((k, v['count']))
     
     return all_labels_identified
 
