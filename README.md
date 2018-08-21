@@ -8,7 +8,7 @@ Collection of Google Cloud Platform Scripts and References
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&bull;&nbsp;<a href="https://cloud.google.com/storage/docs/gsutil">GCP gsutil Commands</a>
 <br>
 <br>
-<br><b><a href="https://cloud.google.com/source-repositories/docs/">Cloud Source Repo</a> Commands:</b> 
+<br><b><a href="https://cloud.google.com/source-repositories/docs/">Cloud Source Repo</a></b> 
 <br><b>Initial Config:</b>
 <br>1) <code>gcloud init</code>
 <br>2) <code>git config --global user.email "you@example.com"</code>
