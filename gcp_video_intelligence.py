@@ -1,19 +1,21 @@
 
+
 #############################################################################
 #
-#   Google Cloud Video Intelligence API
+#   Google Cloud Video Intelligence
 #
-#   References:
-#       https://cloud.google.com/video-intelligence/docs/
-#       https://github.com/nficano/pytube
-#       The Video Intelligence API supports common video formats, including .MOV, .MPEG4, .MP4, and .AVI
-#
+#   Usage:
+#       file.py <youtube_url> <gcs_bucket_name>
 #
 #   Dependencies:
 #       pip install --upgrade google-cloud-videointelligence
 #       pip install --upgrade google-cloud-storage
 #       pip install pytube
 #
+#   References:
+#       https://cloud.google.com/video-intelligence/docs/
+#       https://github.com/nficano/pytube
+#       The Video Intelligence API supports common video formats, including .MOV, .MPEG4, .MP4, and .AVI
 #
 #############################################################################
 
@@ -21,6 +23,7 @@
 from google.cloud import videointelligence
 from google.cloud import storage
 from pytube import YouTube
+import argparse
 
 
 
@@ -37,29 +40,32 @@ def save_youtube_video(youtube_url):
     
     local_filepath = "{}/{}.mp4".format(output_path, youtube_filename)
     print('[ INFO ] Complete! Youtube video downloaded to {}'.format(local_filepath))
-    return local_filepath, youtube_filename
+    return local_filepath
 
 
 
 def upload_to_gcs(bucket_name, local_filepath):
     ''' Upload local file (.mp4) to Google Cloud Storage '''
+    
+    gcs_blob_name  = local_filepath.split('/')[-1]
+    gcs_filepath   = 'gs://{}/{}'.format(bucket_name, gcs_blob_name)
+    
     storage_client = storage.Client()
-    bucket = storage_client.get_bucket(bucket_name)
-    destination_blob_name = local_filepath.split('/')[-1]
-    blob = bucket.blob(destination_blob_name)
-    blob.upload_from_filename(local_filepath)
-    print('[ INFO ] File {} uploaded to gs://{}/{}'.format(
+    gcs_bucket     = storage_client.get_bucket(bucket_name)    
+    gcs_blob       = gcs_bucket.blob(gcs_blob_name)
+    gcs_blob.upload_from_filename(local_filepath)
+    print('[ INFO ] File {} uploaded to {}'.format(
         local_filepath,
-        bucket_name,
-        destination_blob_name))
+        gcs_filepath))
+    return gcs_filepath
 
 
 
-def process_video_in_gcs(gcs_path):
+def process_video_in_gcs(gcs_filepath):
     
     video_client = videointelligence.VideoIntelligenceServiceClient()
     features     = [videointelligence.enums.Feature.LABEL_DETECTION]
-    operation    = video_client.annotate_video(gcs_path, features=features)
+    operation    = video_client.annotate_video(gcs_filepath, features=features)
     result       = operation.result(timeout=90)
     
     segment_labels = result.annotation_results[0].segment_label_annotations
@@ -67,9 +73,10 @@ def process_video_in_gcs(gcs_path):
     
     shot_metadata = {}
     for shot in shots:
-        label    = shot.entity.description
+        entity   = shot.entity.description
+        category = shot.category_entities[0].description
         segments = shot.segments
-        shot_metadata[label] = list(segments)
+        shot_metadata[entity] = { "category":category, "count": len(list(segments)), "shot_segments":list(segments) }
     
     all_labels_identified = list(shot_metadata)
     
@@ -79,13 +86,24 @@ def process_video_in_gcs(gcs_path):
 
 if __name__ == "__main__":
     
+    # Arguments - Only used for testing 
+    #youtube_url = 'https://www.youtube.com/watch?v=imm6OR605UI'
+    #bucket_name = 'zmiscbucket1'
+    
     # Arguments
-    youtube_url = 'https://www.youtube.com/watch?v=imm6OR605UI'
-    bucket_name = 'zmiscbucket1'
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--youtube_url", required=True, help="YouTube URL")
+    ap.add_argument("--bucket_name", required=True, help="Google Cloud Storage bucket name")
+    args = vars(ap.parse_args())
     
-    local_filepath, youtube_filename = save_youtube_video(youtube_url)
+    # Download Youtube video as .mp4 file to local
+    local_filepath = save_youtube_video(youtube_url)
     
-    upload_to_gcs(bucket_name, local_filepath)
+    # Upload .mp4 file to Google Cloud Storage (GCS)
+    gcs_filepath = upload_to_gcs(bucket_name, local_filepath)
+    
+    # Process .mp4 video file, stored on Google Cloud Storage (GCS)
+    process_video_in_gcs(gcs_filepath)
 
 
 
