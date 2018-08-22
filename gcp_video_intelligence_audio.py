@@ -6,7 +6,8 @@
 #
 #   Video Audio Transcription
 #
-#   Usage: 
+#   Usage:  file.py --youtube_url YOUTUBE_URL --bucket_name BUCKET_NAME
+#           file.py --youtube_url=https://www.youtube.com/watch?v=imm6OR605UI --bucket_name=zmiscbucket1
 #
 #   Dependencies:
 #       pip install --upgrade google-cloud-videointelligence==1.2.0
@@ -65,7 +66,7 @@ def upload_to_gcs(bucket_name, local_filepath):
 
 
 def process_videoaudio_in_gcs(gcs_filepath):
-    print('[ INFO ] Transcribing video audio at {}'.format(gcs_filepath))
+    print('[ INFO ] Transcribing video audio from {}'.format(gcs_filepath))
     
     video_client = videointelligence.VideoIntelligenceServiceClient()
     features     = [videointelligence.enums.Feature.SPEECH_TRANSCRIPTION]
@@ -88,8 +89,6 @@ def process_videoaudio_in_gcs(gcs_filepath):
                 features=features,
                 video_context=video_context
                 )
-    
-    print('[ INFO ] Processing video for speech transcription')
     
     result = operation.result(timeout=180)
     
