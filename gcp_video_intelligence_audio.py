@@ -72,6 +72,10 @@ def process_videoaudio_in_gcs(gcs_filepath):
     
     config = videointelligence.types.SpeechTranscriptionConfig(
                 language_code='en-US',
+                #maxAlternatives=1,
+                #filterProfanity=False,
+                #speechContexts=...,
+                #audioTracks=0,
                 enable_automatic_punctuation=True
                 )
     
@@ -80,7 +84,7 @@ def process_videoaudio_in_gcs(gcs_filepath):
                 )
     
     operation = video_client.annotate_video(
-                input_uri, 
+                gcs_filepath, 
                 features=features,
                 video_context=video_context
                 )
@@ -92,19 +96,24 @@ def process_videoaudio_in_gcs(gcs_filepath):
     # There is only one annotation_result since only one video is processed.
     annotation_results   = result.annotation_results[0]
     speech_transcription = annotation_results.speech_transcriptions[0]
-    alternative          = speech_transcription.alternatives[0]
+    alternatives          = speech_transcription.alternatives
     
-    print('Transcript: {}'.format(alternative.transcript))
-    print('Confidence: {}\n'.format(alternative.confidence))
-    print('Word level information:')
-    for word_info in alternative.words:
-        word = word_info.word
-        start_time = word_info.start_time
-        end_time = word_info.end_time
-        print('\t{}s - {}s: {}'.format(
-            start_time.seconds + start_time.nanos * 1e-9,
-            end_time.seconds + end_time.nanos * 1e-9,
-            word))
+    text_blob = ''
+    for alternative in alternatives:
+        print('Transcript: {}'.format(alternative.transcript))
+        print('Confidence: {}\n'.format(alternative.confidence))
+        print('Word level information:')
+        for word_info in alternative.words:
+            word = word_info.word
+            start_time = word_info.start_time
+            end_time = word_info.end_time
+            print('\t{}s - {}s: {}'.format(
+                start_time.seconds + start_time.nanos * 1e-9,
+                end_time.seconds + end_time.nanos * 1e-9,
+                word))
+        
+        text_blob = text_blob + ' ' + alternative.transcript
+    return annotation_results, text_blob
 
 
 
@@ -130,7 +139,7 @@ if __name__ == "__main__":
     gcs_filepath = upload_to_gcs(args["bucket_name"], local_filepath)
     
     # Process .mp4 Audio (within video file), stored on Google Cloud Storage (GCS)
-    process_videoaudio_in_gcs(gcs_filepath)
+    annotation_results, text_blob = process_videoaudio_in_gcs(gcs_filepath)
 
 
 
