@@ -5,8 +5,9 @@
 #
 #   Video Metadata Tagging + Streaming Insert to BigQuery
 #
-#   Usage: file.py --youtube_url YOUTUBE_URL --bucket_name BUCKET_NAME --bq_dataset_id BQ_DATASET_ID --bq_table_id BQ_TABLE_ID
-#          file.py --youtube_url=https://www.youtube.com/watch?v=imm6OR605UI --bucket_name=zmiscbucket1 --bq_dataset_id=video_analysis1 --bq_table_id=video_metadata1
+#   Usage:  file.py --youtube_url YOUTUBE_URL --bucket_name BUCKET_NAME --bq_dataset_id BQ_DATASET_ID --bq_table_id BQ_TABLE_ID
+#           file.py --youtube_url=https://www.youtube.com/watch?v=imm6OR605UI --bucket_name=zmiscbucket1 --bq_dataset_id=video_analysis1 --bq_table_id=video_metadata1
+#           file.py --youtube_url=https://www.youtube.com/watch?v=7dKownfx75E --bucket_name=zmiscbucket1 --bq_dataset_id=video_analysis1 --bq_table_id=video_metadata1
 #
 #   Dependencies:
 #       pip install --upgrade google-cloud-videointelligence
@@ -27,6 +28,21 @@ from google.cloud import storage, bigquery, videointelligence
 from pytube import YouTube
 import argparse
 import datetime, time
+import requests
+from bs4 import BeautifulSoup
+
+
+
+def extract_url_title(url):
+    try:
+        r = requests.get(url)
+        soup = BeautifulSoup(r.text, 'html.parser')
+        title = soup.find('title').string
+        print('[ INFO ] Successfully extracted Title: {}'.format(title))
+        return title
+    except:
+        print('[ ERROR ] Issue processing URL. Check the URL and/or internet connection.')
+        sys.exit()
 
 
 
@@ -66,7 +82,7 @@ def upload_to_gcs(bucket_name, local_filepath):
 
 
 
-def process_video_in_gcs(gcs_filepath, video_url):
+def process_video_in_gcs(gcs_filepath, video_url, title):
     ''' Apply Google Video Intelligence API - Tag video metadata shot-by-shot '''
     
     print('[ INFO ] Processing video at {}'.format(gcs_filepath))
@@ -105,7 +121,7 @@ def process_video_in_gcs(gcs_filepath, video_url):
             end_time_offset     = segment.segment.end_time_offset.seconds
             confidence          = segment.confidence
             video_url_at_time   = video_url+'&t={}m{}s'.format(start_time_offset_m, start_time_offset_s)
-            shot_records.append( (datetimeid, video_url_at_time, gcs_filepath, entity, category, start_time_offset, end_time_offset, confidence) )
+            shot_records.append( (datetimeid, title, video_url_at_time, gcs_filepath, entity, category, start_time_offset, end_time_offset, confidence) )
     
     print('[ INFO ] Processing complete. There were {} shot records found.'.format(len(shot_records)))
     processing_end_time = datetime.datetime.now()
@@ -132,7 +148,7 @@ def bg_streaming_insert(rows_to_insert, bq_dataset_id, bq_table_id):
 
 if __name__ == "__main__":
     
-    # Arguments - Only used for testing
+    # ONLY used for TESTING - Example Arguments
     #args =  {
     #           "youtube_url":   "https://www.youtube.com/watch?v=imm6OR605UI",
     #           "bucket_name":   "zmiscbucket1",
@@ -148,6 +164,9 @@ if __name__ == "__main__":
     ap.add_argument("--bq_table_id", required=True, help="Google BigQuery Table ID")
     args = vars(ap.parse_args())
     
+    # Extract YouTube page Title 
+    title = extract_url_title(url=args["youtube_url"])
+    
     # Download Youtube video as .mp4 file to local
     local_filepath = save_youtube_video(args["youtube_url"])
     
@@ -155,10 +174,107 @@ if __name__ == "__main__":
     gcs_filepath = upload_to_gcs(args["bucket_name"], local_filepath)
     
     # Process .mp4 video file, stored on Google Cloud Storage (GCS)
-    shot_records = process_video_in_gcs(gcs_filepath, args["youtube_url"])
+    shot_records = process_video_in_gcs(gcs_filepath=gcs_filepath, video_url=args["youtube_url"], title=title)
     
     # Insert into BigQuery
     bg_streaming_insert(rows_to_insert=shot_records, bq_dataset_id=args['bq_dataset_id'], bq_table_id=args['bq_table_id'])
+
+
+
+
+
+
+
+"""
+
+#############################################################################
+#
+#   BigQuery Setup
+#
+#############################################################################
+
+
+
+from google.cloud import bigquery
+
+
+def bq_create_dataset(dataset_id):
+    ''' Create BigQuery Dataset '''
+    
+    bigquery_client = bigquery.Client()
+    dataset_ref     = bigquery_client.dataset(dataset_id)
+    dataset         = bigquery.Dataset(dataset_ref)
+    dataset         = bigquery_client.create_dataset(dataset)
+    print('[ INFO ] Dataset {} created.'.format(dataset.dataset_id))
+
+
+table_schema = [
+    bigquery.SchemaField('datetimeid',          'STRING',   mode='REQUIRED'),
+    bigquery.SchemaField('title',               'STRING',   mode='NULLABLE'),
+    bigquery.SchemaField('video_url',           'STRING',   mode='NULLABLE'),
+    bigquery.SchemaField('gcs_url',             'STRING',   mode='NULLABLE'),
+    bigquery.SchemaField('entity',              'STRING',   mode='NULLABLE'),
+    bigquery.SchemaField('category',            'STRING',   mode='NULLABLE'),
+    bigquery.SchemaField('start_time_seconds',  'INTEGER',  mode='NULLABLE'),
+    bigquery.SchemaField('end_time_seconds',    'INTEGER',  mode='NULLABLE'),
+    bigquery.SchemaField('confidence',          'FLOAT',    mode='NULLABLE'),
+]
+
+
+def bq_create_table(dataset_id, table_id, table_schema):
+    ''' Create BigQuery Table '''
+    
+    #table_schema = [
+    #    bigquery.SchemaField('full_name', 'STRING', mode='REQUIRED'),
+    #    bigquery.SchemaField('age', 'INTEGER', mode='REQUIRED'),
+    #]
+    
+    # BigQuery Client
+    bigquery_client = bigquery.Client()
+    
+    # Dataset object
+    dataset_ref     = bigquery_client.dataset(dataset_id)
+    
+    # Table object and creation
+    table_ref       = dataset_ref.table(table_id)
+    table           = bigquery.Table(table_ref, schema=table_schema)
+    table           = bigquery_client.create_table(table)
+    print('[ INFO ] Table {} created.'.format(table.table_id))
+
+
+bq_create_table('video_analysis1', 'video_metadata1', table_schema)
+
+
+def bq_query_table(query):
+    ''' BigQuery Query Table '''
+    
+    bigquery_client = bigquery.Client()
+    
+    #query = ('''select * from video_analysis1.video_metadata1 limit 5''')
+    
+    query_job = bigquery_client.query(
+        query,
+        # Location must match that of the dataset(s) referenced in the query.
+        location='US')  # API request - starts the query
+    
+    # Print Results
+    for row in query_job:
+        # Row values can be accessed by field name or index
+        # NOTE: row[0] == row.name == row['name']
+        print(row)
+
+
+query = ('''select * from video_analysis1.video_metadata1 limit 5''')
+bq_query_table(query)
+
+
+#ZEND
+
+
+"""
+
+
+
 
 
 
