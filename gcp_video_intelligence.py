@@ -70,6 +70,9 @@ def process_video_in_gcs(gcs_filepath, video_url):
     ''' Apply Google Video Intelligence API - Tag video metadata shot-by-shot '''
     
     print('[ INFO ] Processing video at {}'.format(gcs_filepath))
+    processing_start_time = datetime.datetime.now()
+    print('[ INFO ] Start time: {}'.format(processing_start_time.strftime("%Y-%m-%d %H:%M:%S")) )
+    
     video_client = videointelligence.VideoIntelligenceServiceClient()
     features     = [videointelligence.enums.Feature.LABEL_DETECTION]
     operation    = video_client.annotate_video(gcs_filepath, features=features)
@@ -105,6 +108,9 @@ def process_video_in_gcs(gcs_filepath, video_url):
             shot_records.append( (datetimeid, video_url_at_time, gcs_filepath, entity, category, start_time_offset, end_time_offset, confidence) )
     
     print('[ INFO ] Processing complete. There were {} shot records found.'.format(len(shot_records)))
+    processing_end_time = datetime.datetime.now()
+    print('[ INFO ] End time: {}'.format(processing_end_time.strftime("%Y-%m-%d %H:%M:%S")) )
+    print('[ INFO ] Run time: {} seconds'.format((processing_end_time - processing_start_time).seconds) )
     return shot_records
 
 
