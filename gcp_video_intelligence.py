@@ -5,8 +5,8 @@
 #
 #   Video Metadata Tagging + Streaming Insert to BigQuery
 #
-#   Usage: file.py --youtube_url YOUTUBE_URL --bucket_name BUCKET_NAME
-#          file.py --youtube_url=https://www.youtube.com/watch?v=imm6OR605UI --bucket_name=zmiscbucket1
+#   Usage: file.py --youtube_url YOUTUBE_URL --bucket_name BUCKET_NAME --bq_dataset_id BQ_DATASET_ID --bq_table_id BQ_TABLE_ID
+#          file.py --youtube_url=https://www.youtube.com/watch?v=imm6OR605UI --bucket_name=zmiscbucket1 --bq_dataset_id=video_analysis1 --bq_table_id=video_metadata1
 #
 #   Dependencies:
 #       pip install --upgrade google-cloud-videointelligence
