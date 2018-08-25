@@ -92,7 +92,7 @@ def process_video_in_gcs(gcs_filepath, video_url, title):
     video_client = videointelligence.VideoIntelligenceServiceClient()
     features     = [videointelligence.enums.Feature.LABEL_DETECTION]
     operation    = video_client.annotate_video(gcs_filepath, features=features)
-    result       = operation.result(timeout=90)
+    result       = operation.result(timeout=600)
     
     segment_labels = result.annotation_results[0].segment_label_annotations
     shots = result.annotation_results[0].shot_label_annotations
