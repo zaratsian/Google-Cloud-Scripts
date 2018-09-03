@@ -1,29 +1,27 @@
 
 
-
 #############################################################################
 #
-#   Google Cloud Vision / Image Analysis
+#   Google Cloud Vision (Image Analysis)
 #
-#   Usage:  file.py --youtube_url YOUTUBE_URL --bucket_name BUCKET_NAME --bq_dataset_id BQ_DATASET_ID --bq_table_id BQ_TABLE_ID
-#           file.py --youtube_url=https://www.youtube.com/watch?v=imm6OR605UI --bucket_name=zmiscbucket1 --bq_dataset_id=video_analysis1 --bq_table_id=video_metadata1
-#           file.py --youtube_url=https://www.youtube.com/watch?v=7dKownfx75E --bucket_name=zmiscbucket1 --bq_dataset_id=video_analysis1 --bq_table_id=video_metadata1
+#   Usage:
+#
 #
 #   Dependencies:
 #       pip install --upgrade google-cloud-vision
 #       pip install --upgrade google-cloud-storage
 #       pip install --upgrade google-cloud-bigquery
-#       pip install pytube
 #
 #   References:
 #       https://cloud.google.com/vision/docs/libraries
 #       https://github.com/nficano/pytube
+#       https://github.com/zaratsian/python/blob/master/convert_video_to_images.py
 #
 #############################################################################
 
 
 
-import os,sys
+import os,sys,re
 import io
 import datetime
 from google.cloud import vision
@@ -138,16 +136,32 @@ def image_tag_web_entities(image_filepath):
 
 
 
+def search_entities(search_phase, image_web_entities):
+    return [record for record in image_web_entities if re.search(search_phase.lower(),str(record).lower())]
 
 
 
 if __name__ == "__main__":
     
-    image_filepath = sys.argv[1]
     
-    image_label_detection(image_filepath)
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--images_path", required=True, help="Directory / Path for images")
+    args = vars(ap.parse_args())
     
-    image_tag_web_entities(image_filepath)
+    
+    # Process image filepaths
+    images_filepath = [os.path.join(images_path,f) for f in os.listdir(images_path) if re.search('\.jpg',f)]
+    
+    
+    # Score images (iterate through image directory)
+    image_web_entities = []
+    for image_filepath in images_filepath:
+        #image_label_detection(image_filepath)
+        image_web_entities = image_web_entities + image_tag_web_entities(image_filepath)
+    
+    
+    # Query entities
+    # search_entities('danny', image_web_entities)
 
 
 
