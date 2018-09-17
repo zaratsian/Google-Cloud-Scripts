@@ -17,7 +17,7 @@ export host_project=zsharedvpc10
 export host_admin=admin@dynamicprototypes.com
 export service_project=zcloudcomposer10
 export shared_network_name=zsharednet
-export $subnet_region=us-east4
+export subnet_region=us-east4
 
 
 
@@ -139,6 +139,20 @@ gcloud beta compute networks subnets set-iam-policy tier-2 \
 gcloud projects add-iam-policy-binding $host_project \
     --member serviceAccount:service-[SERVICE_PROJECT_1_NUM]@container-engine-robot.iam.gserviceaccount.com \
     --role roles/container.hostServiceAgentUser
+
+
+
+# Creating a cluster in your first service project
+gcloud beta container clusters create tier-1-cluster \
+    --project $service_project \
+    --zone=$subnet_region-a \
+    --enable-ip-alias \
+    --network projects/$host_project/global/networks/$shared_network_name \
+    --subnetwork projects/$host_project/regions/$subnet_region/subnetworks/tier-1 \
+    --cluster-secondary-range-name tier-1-pods \
+    --services-secondary-range-name tier-1-services
+
+gcloud compute instances list --project [SERVICE_PROJECT_1_NUM]
 
 
 
