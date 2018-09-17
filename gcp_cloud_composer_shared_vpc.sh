@@ -31,7 +31,7 @@ echo "Using Organization ID: $organization_id"
 # Prevent accidental deletion of host projects
 gcloud beta resource-manager org-policies enable-enforce --organization $organization_id compute.restrictXpnProjectLienRemoval
 # Nominate a Shared VPC Admin
-gcloud organizations add-iam-policy-binding $organization_id --member 'user:$host_admin' --role "roles/compute.xpnAdmin"
+gcloud organizations add-iam-policy-binding $organization_id --member 'user:'$host_admin --role "roles/compute.xpnAdmin"
 gcloud auth revoke $organization_admin
 
 
