@@ -63,4 +63,87 @@ gcloud compute networks subnets create tier-2 \
 
 
 
+# Enabling shared VPC and granting roles
+gcloud compute shared-vpc enable $host_project
+
+
+
+# Attach your first service project to your host project:
+gcloud compute shared-vpc associated-projects add \
+    $service_project \
+    --host-project $host_project
+
+
+
+# Get the IAM policy for the tier-1 subnet
+gcloud beta compute networks subnets get-iam-policy tier-1 \
+   --project $host_project \
+   --region $subnet_region
+
+'''
+The output contains an etag field. Make a note of the etag value.
+
+Create a file named tier-1-policy.yaml that has this content:
+
+bindings:
+- members:
+  - serviceAccount:[SERVICE_PROJECT_1_NUM]@cloudservices.gserviceaccount.com
+  - serviceAccount:service-[SERVICE_PROJECT_1_NUM]@container-engine-robot.iam.gserviceaccount.com
+  role: roles/compute.networkUser
+etag: [ETAG_STRING]
+
+where [ETAG_STRING] is the etag value that you noted previously.
+'''
+
+
+
+# Set the IAM policy for the tier-1 subnet
+gcloud beta compute networks subnets set-iam-policy tier-1 \
+    tier-1-policy.yaml \
+    --project $host_project \
+    --region $subnet_region
+
+
+
+# Next get the IAM policy for the tier-2 subnet
+gcloud beta compute networks subnets get-iam-policy tier-2 \
+   --project $host_project \
+   --region $subnet_region
+
+'''
+The output contains an etag field. Make a note of the etag value.
+
+Create a file named tier-2-policy.yaml that has this content:
+
+bindings:
+- members:
+  - serviceAccount:[SERVICE_PROJECT_2_NUM]@cloudservices.gserviceaccount.com
+  - serviceAccount:service-[SERVICE_PROJECT_2_NUM]@container-engine-robot.iam.gserviceaccount.com
+  role: roles/compute.networkUser
+etag: [ETAG_STRING]
+
+where: [ETAG_STRING] is the etag value that you noted previously
+'''
+
+
+
+# Set the IAM policy for the tier-2 subnet
+gcloud beta compute networks subnets set-iam-policy tier-2 \
+    tier-2-policy.yaml \
+    --project $host_project \
+    --region $subnet_region
+
+
+
+# Granting the Host Service Agent User role
+gcloud projects add-iam-policy-binding $host_project \
+    --member serviceAccount:service-[SERVICE_PROJECT_1_NUM]@container-engine-robot.iam.gserviceaccount.com \
+    --role roles/container.hostServiceAgentUser
+
+
+
+''' ...more... '''
+
+
+
 #ZEND
