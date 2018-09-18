@@ -23,6 +23,7 @@ export subnet_region=us-east4
 
 # Prepare Organization
 # https://cloud.google.com/vpc/docs/provisioning-shared-vpc#prepare_your_organization
+echo "Logging in with user: $organization_admin"
 gcloud auth login $organization_admin
 gcloud organizations list
 echo "Enter Organization ID..."
@@ -46,6 +47,15 @@ gcloud services enable container.googleapis.com --project $service_project
 gcloud compute networks create $shared_network_name \
     --subnet-mode custom \
     --project $host_project
+
+'''
+
+Instances on this network will not be reachable until firewall rules
+are created. As an example, you can allow all internal traffic between
+instances as well as SSH, RDP, and ICMP by running:
+$ gcloud compute firewall-rules create <FIREWALL_NAME> --network zsharednet --allow tcp,udp,icmp --source-ranges <IP_RANGE>
+$ gcloud compute firewall-rules create <FIREWALL_NAME> --network zsharednet --allow tcp:22,tcp:3389,icmp
+'''
 
 gcloud compute networks subnets create tier-1 \
     --project $host_project \
@@ -80,7 +90,7 @@ gcloud beta compute networks subnets get-iam-policy tier-1 \
    --project $host_project \
    --region $subnet_region
 
-'''
+''' 
 The output contains an etag field. Make a note of the etag value.
 
 Create a file named tier-1-policy.yaml that has this content:
