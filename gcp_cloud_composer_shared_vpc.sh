@@ -165,9 +165,4 @@ gcloud beta container clusters create tier-1-cluster \
 gcloud compute instances list --project [SERVICE_PROJECT_1_NUM]
 
 
-
-''' ...more... '''
-
-
-
 #ZEND
