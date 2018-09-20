@@ -11,7 +11,7 @@
 
 
 
-# Set Host Project (Share VPC) and Service Project (Cloud Composer)
+# Set ENV variables
 export organization_admin=admin@dynamicprototypes.com
 export host_project=zsharedvpc10
 export host_admin=admin@dynamicprototypes.com
