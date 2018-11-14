@@ -19,7 +19,7 @@ gcloud config set project $PROJECT_ID
 gcloud config set compute/region $REGION_NAME
 
 
-gcloud iam service-accounts create ${PROJECT_ID}-sacct --display-name "${PROJECT_ID}-sacct"
+gcloud iam service-accounts create ${PROJECT_ID}-automl-translate-sacct --display-name "${PROJECT_ID}-automl-translate-sacct"
 gcloud iam service-accounts list
 
 
@@ -55,8 +55,7 @@ Run the create_dataset function to create an empty dataset.
 The first parameter gives a name for the dataset (en_es_dataset) and the second and
 third parameters specify the source and target languages respectively.
 '''
-python ./python-docs-samples/translate/automl/automl_translation_dataset.py creat
-e_dataset "en_es_dataset" "en" "es"
+python ./python-docs-samples/translate/automl/automl_translation_dataset.py create_dataset "en_es_dataset" "en" "es"
 
 
 '''
