@@ -43,18 +43,4 @@ gsutil ls gs://zBucket
 
 
 
-# Python - Process data in GCP Cloud Storage
-import os
-from google.cloud import storage
-
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "/Users/dzaratsian/gcpkey.json"
-
-client = storage.Client()
-bucket = client.get_bucket('chicago_traffic_data')
-blob   = bucket.get_blob('20180416_225600')
-data   = blob.download_as_string()
-print(data)
-
-
-
 #ZEND
