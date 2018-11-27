@@ -3,7 +3,7 @@
 ###############################################################################
 #
 #   USAGE:
-#   download_and_save_video.py --media_url "http://s3-eu-west-1.amazonaws.com/data.spicymango.co.uk/big_buck_bunny_720p_30mb.mp4" --bucket_name "tmp_video_bucket_eurosport"
+#   download_and_save_video.py --media_url "http://my/url/to/somevideo.mp4" --bucket_name "tmp_video_bucket"
 #
 ###############################################################################
 
