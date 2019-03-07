@@ -322,7 +322,7 @@ if __name__ == "__main__":
     
     
     # Write to BigQuery
-    bg_streaming_insert(rows_to_insert=logos, bq_dataset_id=args['bq_dataset_id'], bq_table_id=args['bq_table_id'])
+    bg_streaming_insert(rows_to_insert=entities, bq_dataset_id=args['bq_dataset_id'], bq_table_id=args['bq_table_id'])
 
 
 
