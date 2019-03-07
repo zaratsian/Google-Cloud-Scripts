@@ -158,6 +158,9 @@ def image_label_detection(image_filepath):
 def image_tag_web_entities(image_filepath, title, youtube_url):
     """Detects web annotations given an image."""
     
+    # Create record_id
+    record_id = local_filepath.split('/')[-1]
+    
     client = vision.ImageAnnotatorClient()
     
     with io.open(image_filepath, 'rb') as image_file:
@@ -216,7 +219,7 @@ def image_tag_web_entities(image_filepath, title, youtube_url):
             #print('\n\tScore     : {}'.format(entity.score))
             #print(u'\tDescription: {}'.format(entity.description))
             if entity.description != '' and entity.score >= 0.40:
-                shot_records.append( (datetimeid, title, video_url_at_time, '', entity.description, '', start_time_offset, end_time_offset, entity.score) )
+                shot_records.append( (record_id, datetimeid, title, video_url_at_time, '', entity.description, '', start_time_offset, end_time_offset, entity.score) )
     
     '''
     if annotations.visually_similar_images:
