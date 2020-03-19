@@ -16,6 +16,7 @@
 
 from google.cloud import firestore
 
+firestore_client = firestore.Client()
 
 def add_to_firestore(collection_id, doc_id, dict):
     ''' 
@@ -26,12 +27,12 @@ def add_to_firestore(collection_id, doc_id, dict):
     dict = {
         'first': 'Dan',
         'last':  'Z',
-        'msg':   'Test message'
+        'msg':   'Test message',
         'value': 123
     }
     '''
-    db = firestore.Client()
-    doc_ref = db.collection(collection_id).document(doc_id)
+    #firestore_client = firestore.Client()
+    doc_ref = firestore_client.collection(collection_id).document(doc_id)
     doc_ref.set(dict)
 
 
@@ -44,9 +45,8 @@ def update_firestore(collection_id, doc_id, dict_update):
         'value': 456
     }
     '''
-    
-    db = firestore.Client()
-    doc_ref = db.collection(collection_id).document(doc_id)
+    #firestore_client = firestore.Client()
+    doc_ref = firestore_client.collection(collection_id).document(doc_id)
     doc_ref.update(dict_update)
 
 
@@ -54,15 +54,47 @@ def query_firestore(collection_id):
     ''' 
     Query Google Cloud Firestore
     
-    users_ref = db.collection('users').where('first', '==', 'Dan').where('value', '>', 300).stream()
+    users_ref = firestore_client.collection('users').where('value', '>', '300')
     '''
+    #firestore_client = firestore.Client()
+    users_ref = firestore_client.collection(collection_id)
+    docs = users_ref.stream()
     
-    db = firestore.Client()
-    users_ref = db.collection(collection_id)
-    docs = users_ref.get()
-    
+    json_out = {}
     for doc in docs:
-        print(u'{} => {}'.format(doc.id, doc.to_dict()))
+        json_out[doc.id] = doc.to_dict()
+    
+    return json_out
 
+
+'''
+Example:
+
+collection_id = 'users'
+doc_id        = 'd.zaratsian@gmail.com'
+
+dict = {
+        'first': 'Dan',
+        'last':  'Z',
+        'msg':   'Test message',
+        'value': 123
+}
+
+add_to_firestore(collection_id, doc_id, dict)
+
+query_firestore(collection_id)
+
+dict_update = {
+        'value': 456
+}
+
+update_firestore(collection_id, doc_id, dict_update)
+
+query_firestore(collection_id)
+
+
+'''
+        
+        
 
 #ZEND
